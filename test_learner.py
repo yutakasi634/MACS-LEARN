@@ -33,10 +33,17 @@ class TestClassifiedArray(TestSigmoidNetwork):
 class TestDifferentialInOutput(TestSigmoidNetwork):
     def test_differential_in_output(self):
         answer_node = 2
-        differential = self.net.differential_in_output( \
+        differential, differential_by_weighted_sum = self.net.differential_in_output( \
             self.inter_outputs[:, self.net.properties['layers_num'] - 1], \
             self.classify_probs, answer_node)
+        self.assertEqual(differential.shape, \
+            (self.net.properties['nodes_num'], self.net.properties['classes_num']))
+        self.assertEqual(differential_by_weighted_sum.shape, \
+            (self.net.properties['classes_num'], 1))
+        print('\n answer node is ', answer_node)
         print('\nDifferential of output layer is \n', differential)
+        print('\nDifferential of output layer by weited sum is \n', \
+            differential_by_weighted_sum)
         
 if __name__ == '__main__':
 
