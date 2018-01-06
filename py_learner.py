@@ -95,5 +95,10 @@ class SigmoidNetwork:
         return differential, differential_by_weighted_sum
 
     def back_propagation(self, output_diff_by_wighted_sum, outputs):
-        self.connections[j,k] * deriv_sigmoid()
+        input2activation_func = np.einsum('ij,ijk->ki',outputs.T, self.connections) #node * layer
+        deriv_activation_func = self.deriv_sigmoid(input2activation_func)
+        # del u_k^{l+1} / del u_j^{l}
+        deriv_inp2act_by_inp2act = \
+            np.einsum('ijk,ji->ijk', self.connections, deriv_activation_func)
+        #TODO multiply upper layer's deriv of error and sum
         
