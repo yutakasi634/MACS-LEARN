@@ -47,15 +47,15 @@ class SigmoidNetwork:
         # input is numpy array, 1 dim
         nodes_num = self.properties['nodes_num']
         assert input.shape == (nodes_num,), 'Invalid dimension input!!'
-        outputs_probs = np.matrix(np.empty((nodes_num, 0))).astype('float32')
+        outputs = np.empty((nodes_num, 0)).astype('float32')
         propagated_state = input
         for layer in range(self.properties['layers_num']):
-            output_probs = np.dot(propagated_state, self.connections[layer])
-            output_probs = self.sigmoid(output_probs)
-            outputs_probs = np.append(outputs_probs, output_probs.reshape(1,-1).T, axis=1)
+            output = np.dot(propagated_state, self.connections[layer])
+            output = self.sigmoid(output)
             rand_array = self.random_generator.rand(nodes_num)
-            propagated_state = np.less(rand_array, output_probs).astype(int)
-        return propagated_state, outputs_probs
+            propagated_state = np.less(rand_array, output).astype(int)
+            outputs = np.append(outputs, propagated_state.reshape(1,-1).T, axis=1)
+        return outputs
 
     def classify(self, input):
         # input is numpy array
@@ -85,10 +85,10 @@ class SigmoidNetwork:
         return np.sum(np.exp(input_array), axis=0)
 
     def differential_in_output(self, inp, classify_probs, answer_node):
-        # both input array and classify_probs are numpy array. 1 dim
+        # both inp and classify_probs are numpy array. 1 dim
         # answer_node is scholar
         # differential is 2d matrix, node_num * class_num
-        # differential_by_weited_sum is column vector, class_num elements
+        # differential_by_weited_sum is numpy array, class_num elements
         differential_by_weighted_sum = classify_probs
         differential_by_weighted_sum[answer_node] -=  1
         differential = np.dot(np.matrix(inp).T, np.matrix(differential_by_weighted_sum))
