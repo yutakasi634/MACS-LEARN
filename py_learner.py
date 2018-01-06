@@ -34,7 +34,8 @@ class SigmoidNetwork:
             self.random_generator.uniform( \
                 low=-0.1, high=0.1, size=(self.properties['layers_num'], \
                                           self.properties['nodes_num'], \
-                                          self.properties['nodes_num'])).astype('float32')
+                                          self.properties['nodes_num'])) \
+                                 .astype('float32')
         self.classification_connection = \
             self.random_generator.uniform( \
                 low=-0.1, high=0.1, size=(self.properties['nodes_num'], \
@@ -43,20 +44,22 @@ class SigmoidNetwork:
                                 self.properties['layers_num'])).astype('float32')
         
     def forward_propagate(self, input):
+        # input is numpy array, 1 dim
         nodes_num = self.properties['nodes_num']
         assert input.shape == (nodes_num,), 'Invalid dimension input!!'
-        outputs = np.matrix(np.empty((nodes_num, 0))).astype('float32')
+        outputs_probs = np.matrix(np.empty((nodes_num, 0))).astype('float32')
+        propagated_state = input
         for layer in range(self.properties['layers_num']):
-            output = np.dot(input.T, self.connections[layer])
-            output = self.sigmoid(output)
+            output_probs = np.dot(propagated_state, self.connections[layer])
+            output_probs = self.sigmoid(output_probs)
+            outputs_probs = np.append(outputs_probs, output_probs.reshape(1,-1).T, axis=1)
             rand_array = self.random_generator.rand(nodes_num)
-            output = np.less(rand_array, output).astype(int)
-            outputs = np.append(outputs, output.reshape(1,-1).T, axis=1)
-        return outputs
+            propagated_state = np.less(rand_array, output_probs).astype(int)
+        return propagated_state, outputs_probs
 
     def classify(self, input):
-        # input is column vector
-        # return is column vector
+        # input is numpy array
+        # return is numpy array
         assert input.shape[0] == self.properties['nodes_num'], 'Invalid dimension input!!'
         classify_probs = self.softmax_func(self.classification_connection, input)
         return classify_probs
@@ -72,7 +75,7 @@ class SigmoidNetwork:
         #wmK = {wm1, wm2,... wmk} k is node num, 1 dim, column vector
         #inputs is xK = {x1, x2, ......., xk} k is node num, column vector
         #return is {exp(w1KTxK) / sum(exp(w2KTxK)), ....., exp(wmKTxK) / sum(exp(wMKTxK))}
-        inputs = np.matmul(connections.T, input_array) #w1KTxK, w2KTxK, ...wmKTxK
+        inputs = np.matmul(input_array, connections) #w1KTxK, w2KTxK, ...wmKTxK
         return np.exp(inputs) / self.softmax_dist_func(inputs)  #p(cluster1), p(cluster2)...p(clusterm), column vector
 
     def softmax_dist_func(self, input_array):
@@ -82,11 +85,15 @@ class SigmoidNetwork:
         return np.sum(np.exp(input_array), axis=0)
 
     def differential_in_output(self, inp, classify_probs, answer_node):
-        # both input array and classify_probs are column vector.
+        # both input array and classify_probs are numpy array. 1 dim
         # answer_node is scholar
         # differential is 2d matrix, node_num * class_num
         # differential_by_weited_sum is column vector, class_num elements
         differential_by_weighted_sum = classify_probs
         differential_by_weighted_sum[answer_node] -=  1
-        differential = np.dot(inp, differential_by_weighted_sum.T)
+        differential = np.dot(np.matrix(inp).T, np.matrix(differential_by_weighted_sum))
         return differential, differential_by_weighted_sum
+
+    def back_propagation(self, output_diff_by_wighted_sum, outputs):
+        self.connections[j,k] * deriv_sigmoid()
+        
