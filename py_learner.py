@@ -56,6 +56,7 @@ class SigmoidNetwork:
 
     def classify(self, input):
         # input is column vector
+        # return is column vector
         assert input.shape[0] == self.properties['nodes_num'], 'Invalid dimension input!!'
         classify_probs = self.softmax_func(self.classification_connection, input)
         return classify_probs
@@ -72,7 +73,7 @@ class SigmoidNetwork:
         #inputs is xK = {x1, x2, ......., xk} k is node num, column vector
         #return is {exp(w1KTxK) / sum(exp(w2KTxK)), ....., exp(wmKTxK) / sum(exp(wMKTxK))}
         inputs = np.matmul(connections.T, input_array) #w1KTxK, w2KTxK, ...wmKTxK
-        return np.exp(inputs) / self.softmax_dist_func(inputs)  #p(cluster1), p(cluster2)...p(clusterm)
+        return np.exp(inputs) / self.softmax_dist_func(inputs)  #p(cluster1), p(cluster2)...p(clusterm), column vector
 
     def softmax_dist_func(self, input_array):
         #denominator of softmax function
@@ -81,8 +82,11 @@ class SigmoidNetwork:
         return np.sum(np.exp(input_array), axis=0)
 
     def differential_in_output(self, inp, classify_probs, answer_node):
-        # both input array is column vector.
-        differential =  -np.dot(inp, classify_probs.T)
-        differential[answer_node, :] += 1
-        return differential
-        
+        # both input array and classify_probs are column vector.
+        # answer_node is scholar
+        # differential is 2d matrix, node_num * class_num
+        # differential_by_weited_sum is column vector, class_num elements
+        differential_by_weighted_sum = classify_probs
+        differential_by_weighted_sum[answer_node] -=  1
+        differential = np.dot(inp, differential_by_weighted_sum.T)
+        return differential, differential_by_weighted_sum
