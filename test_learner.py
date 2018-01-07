@@ -15,7 +15,7 @@ class PrintProperty(TestSigmoidNetwork):
         print('Network property is ')
         self.print_property()
         print('\nInput array is ', self.input)
-        print('\nOutputs of all layer is ', self.outputs)
+        print('\nOutputs of all layer is \n', self.outputs)
         print('\nClassified_array is \n', self.classify_probs)
 
     def print_property(self):
