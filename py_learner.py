@@ -15,17 +15,19 @@ def multiclass_cross_entropy(true_class, connections, inputs):
 class SigmoidNetwork:
     '''Neural network which have Sigmoid function as activation function.'''
 
-    # * - * - * - * 
-    #   \   /   /   \
-    # * - * - * - * - *
-    #   /   /   \   /
-    # * - * - * - * - *
-    #   \   \   /   / ^
-    # * - * - * - *   |
-    # ^   ^   ^   ^   last layer is output layer
-    # |   |   |   |
-    #     layers
-    
+    # input layer is not network layer. input connection is first connection matrix.
+    # connections matrix's first matrix is input to first layer of network.
+    # * - * - * - * - * 
+    #   \   \   /   /   \
+    # * - * - * - * - * - *
+    #   /   /   /   \   /
+    # * - * - * - * - * - *
+    #   \   \   \   /   / ^
+    # * - * - * - * - *   |
+    # ^  ^   ^   ^   ^   last layer is output layer
+    # |  |   |   |   |
+    # |  (   layers  )
+    # input
     def __init__(self, nodes_num, layers_num, classes_num, random_seed):
         self.properties = {'nodes_num': nodes_num, 'layers_num': layers_num, \
                            'classes_num': classes_num, 'random_seed': random_seed}
