@@ -49,15 +49,15 @@ class SigmoidNetwork:
         # input is numpy array, 1 dim
         nodes_num = self.properties['nodes_num']
         assert input.shape == (nodes_num,), 'Invalid dimension input!!'
-        outputs = np.empty((nodes_num, 0)).astype('float32')
+        outputs = np.array([input]).astype('float32')        
         propagated_state = input
         for layer in range(self.properties['layers_num']):
             output = np.dot(propagated_state, self.connections[layer])
             output = self.sigmoid(output)
             rand_array = self.random_generator.rand(nodes_num)
             propagated_state = np.less(rand_array, output).astype(int)
-            outputs = np.append(outputs, propagated_state.reshape(1,-1).T, axis=1)
-        return outputs
+            outputs = np.append(outputs, [propagated_state], axis=0)
+        return outputs.T
 
     def classify(self, input):
         # input is numpy array
