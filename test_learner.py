@@ -33,7 +33,7 @@ class TestForwardPropagete(TestSigmoidNetwork):
     def test_dimension_of_outputs(self):
         self.assertEqual(self.outputs.shape, \
                          (self.net.properties['nodes_num'], \
-                          self.net.properties['layers_num']))
+                          self.net.properties['layers_num'] + 1))
         print('\nOutputs probs of forward propagate is \n', self.outputs)
         
 class TestDifferentialInOutput(TestSigmoidNetwork):
