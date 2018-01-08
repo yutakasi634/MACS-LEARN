@@ -26,14 +26,14 @@ class TestForwardPropagete(TestSigmoidNetwork):
         print('\nOutputs of all layer is \n', outputs)        
 
         self.assertEqual(outputs.shape, \
-                         (self.net.properties['nodes_num'], \
-                          self.net.properties['layers_num'] + 1))
+                         (self.net.nodes_num, \
+                          self.net.layers_num + 1))
         
 class TestClassifiedArray(TestSigmoidNetwork):        
     def test_classified_array_sum(self):
         outputs = self.net.forward_propagate(self.input)
         classify_probs = \
-            self.net.classify(outputs[:, self.net.properties['layers_num'] - 1])        
+            self.net.classify(outputs[:, self.net.layers_num - 1])        
 
         print('\nClassified_array is \n', classify_probs)        
 
@@ -44,9 +44,9 @@ class TestDifferentialInOutput(TestSigmoidNetwork):
         answer_node = 2
         outputs = self.net.forward_propagate(self.input)
         classify_probs = \
-            self.net.classify(outputs[:, self.net.properties['layers_num'] - 1])
+            self.net.classify(outputs[:, self.net.layers_num - 1])
         differential, differential_by_weighted_sum = self.net.differential_in_output( \
-            outputs[:, self.net.properties['layers_num'] - 1], classify_probs, answer_node)
+            outputs[:, self.net.layers_num - 1], classify_probs, answer_node)
 
         print('\n answer node is ', answer_node)
         print('Differential of output layer is \n', differential)
@@ -54,18 +54,18 @@ class TestDifferentialInOutput(TestSigmoidNetwork):
             differential_by_weighted_sum)
 
         self.assertEqual(differential.shape, \
-            (self.net.properties['nodes_num'], self.net.properties['classes_num']))
+            (self.net.nodes_num, self.net.classes_num))
         self.assertEqual(differential_by_weighted_sum.shape, \
-            (self.net.properties['classes_num'],))
+            (self.net.classes_num,))
 
 class TestBackPropagation(TestSigmoidNetwork):
     def test_deriv_err_by_connections_dimension(self):
         answer_node = 2
         outputs = self.net.forward_propagate(self.input)
         classify_probs = \
-            self.net.classify(outputs[:, self.net.properties['layers_num'] - 1])
+            self.net.classify(outputs[:, self.net.layers_num - 1])
         differential, differential_by_weighted_sum = self.net.differential_in_output( \
-            outputs[:, self.net.properties['layers_num'] - 1], classify_probs, answer_node)
+            outputs[:, self.net.layers_num - 1], classify_probs, answer_node)
         deriv_err_by_connections = \
             self.net.back_propagation(differential_by_weighted_sum, outputs)
 
