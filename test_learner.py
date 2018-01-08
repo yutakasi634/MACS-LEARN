@@ -86,10 +86,27 @@ class TestBackPropagation(TestSigmoidNetwork):
         print('\n Differential of error by connectin is \n', deriv_err_by_connections)
         
         self.assertEqual(deriv_err_by_connections.shape, \
-                         (self.net.properties['layers_num'], \
-                          self.net.properties['nodes_num'], \
-                          self.net.properties['nodes_num']))
-        
+                         (self.net.layers_num, \
+                          self.net.nodes_num, \
+                          self.net.nodes_num))
+
+class TestLearningStep(TestSigmoidNetwork):
+    def test_learning_step(self):
+        answer_node = 2
+        total_learning_step = 10000
+        total_answer_step = 1000
+        for step in range(total_learning_step):
+            self.net.learning_step(self.input, answer_node)
+        print('\nLearned network weight is \n', self.net.connections)
+        print('\nLearned classification network weight is \n', \
+              self.net.classification_connection)
+
+        prob_mean = np.zeros((self.net.classes_num))
+        for step in range(total_answer_step):
+            prob_mean += self.net.answer(self.input)
+        prob_mean /= total_answer_step
+        print('\nMean answer is ', prob_mean)
+            
 if __name__ == '__main__':
 
     unittest.main()
