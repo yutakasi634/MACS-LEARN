@@ -1,10 +1,18 @@
+#!/usr/bin/python
+#-*- coding: utf-8 -*-
+
+#
+#test_learner.py
+#
+
+import numpy as np
 import unittest
 from py_learner import *
 
 class TestSigmoidNetwork(unittest.TestCase):
 
     def setUp(self):
-        self.net = SigmoidNetwork(5, 4, 3, 43)
+        self.net = SigmoidNetwork(5, 4, 3, 43, 0.1)
         self.input = np.array([x for x in range(5)])
         
 class PrintProperty(TestSigmoidNetwork):
