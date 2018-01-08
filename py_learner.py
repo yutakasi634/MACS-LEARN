@@ -95,7 +95,7 @@ class SigmoidNetwork:
         differential = np.dot(np.matrix(inp2classify_layer).T, \
                               np.matrix(differential_by_weighted_sum))
         return differential, differential_by_weighted_sum
-
+    
     def back_propagation(self, output_diff_by_wighted_sum, outputs):
         inp2layer = \
             np.einsum('ij,jik->kj', outputs[:,:-1], self.connections)
