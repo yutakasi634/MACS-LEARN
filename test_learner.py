@@ -14,10 +14,15 @@ class PrintProperty(TestSigmoidNetwork):
         print('\nInput array is ', self.input)
 
     def print_property(self):
-        print('nodes num   = ', self.net.properties['nodes_num'])
-        print('layers num  = ', self.net.properties['layers_num'])
-        print('classes num = ', self.net.properties['classes_num'])
-        print('random seed = ', self.net.properties['random_seed'])
+        properties = self.net.properties()
+        print('nodes num   = ', properties['nodes_num'])
+        print('layers num  = ', properties['layers_num'])
+        print('classes num = ', properties['classes_num'])
+        print('random seed = ', properties['random_seed'])
+        print('epsilon     = ', properties['epsilon'])
+        print('Initial connection matrix =\n', self.net.connections)
+        print('Initial classification connection matrix = \n', \
+              self.net.classification_connection)
 
 class TestForwardPropagete(TestSigmoidNetwork):
     def test_dimension_of_outputs(self):

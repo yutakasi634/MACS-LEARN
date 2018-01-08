@@ -76,30 +76,15 @@ class SigmoidNetwork:
     def classify(self, input):
         # input is numpy array
         # return is numpy array
-        assert input.shape[0] == self.properties['nodes_num'], 'Invalid dimension input!!'
+        assert input.shape[0] == self.nodes_num, 'Invalid dimension input!!'
         classify_probs = self.softmax_func(self.classification_connection, input)
         return classify_probs
-        
-    def sigmoid(self, x):
-        return 1 / (1 + np.exp(-x))
+
+    def properties(self):
+        return { 'nodes_num': self.nodes_num, 'layers_num': self.layers_num, \
+                 'classes_num': self.classes_num, 'random_seed': self.random_seed, \
+                 'epsilon': self.epsilon }
     
-    def deriv_sigmoid(self, x):
-        return self.sigmoid(x) * (1 - self.sigmoid(x))    
-
-    def softmax_func(self, connections, input_array):
-        #connections is wMK = {w1K, w2K, ......, wmK} m is cluster num, 2 dim, line vector
-        #wmK = {wm1, wm2,... wmk} k is node num, 1 dim, column vector
-        #inputs is xK = {x1, x2, ......., xk} k is node num, column vector
-        #return is {exp(w1KTxK) / sum(exp(w2KTxK)), ....., exp(wmKTxK) / sum(exp(wMKTxK))}
-        inputs = np.matmul(input_array, connections) #w1KTxK, w2KTxK, ...wmKTxK
-        return np.exp(inputs) / self.softmax_dist_func(inputs)  #p(cluster1), p(cluster2)...p(clusterm), column vector
-
-    def softmax_dist_func(self, input_array):
-        #denominator of softmax function
-        #input_array is {x1, x2, ........, xn}, column vector
-        #return is {sum(exp(x1)), sum(exp(x2)), ...... ,sum(exp(xn))}, scholar
-        return np.sum(np.exp(input_array), axis=0)
-
     def differential_in_output(self, inp2classify_layer, classify_probs, answer_node):
         # both inp and classify_probs are numpy array. 1 dim
         # answer_node is scholar
