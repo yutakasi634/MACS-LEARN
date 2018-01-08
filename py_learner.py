@@ -97,15 +97,17 @@ class SigmoidNetwork:
         return differential, differential_by_weighted_sum
 
     def back_propagation(self, output_diff_by_wighted_sum, outputs):
+        inp2layer = \
+            np.einsum('ij,jik->kj', outputs, self.connections)
+        deriv_act_by_inp = self.deriv_sigmoid(inp2layer)
+
         # back propagation from output layer to last layer.
-        deriv_inp2class_by_inp2act = \
-            np.einsum('ij,j->ij', self.classification_connection, \
-                       outputs[:, self.properties['layers_num'] - 1])
+        deriv_inp2output_by_inp2last = \
+            np.einsum('ij,i->ij',self.classification_connection ,deriv_act_by_inp[:, -1])
         deriv_err_by_weighted_sum = \
-            np.einsum('jk,k->j',deriv_inp2act_by_inp2act, output_diff_by_wighted_sum)
-        deriv_by_connection  = \
-            np.einsum('i,j->ij', outputs[:, self.properties['layers_num'] -2], \
-                      deriv_err_by_weighted_sum)
+            np.einsum('ij,j->i)', deriv_inp2output_by_inp2last, output_diff_by_wighted_sum)
+        deriv_by_connection  = np.einsum('i,j->ij', outputs[:, -2], \
+                                         deriv_err_by_weighted_sum)
         
         # back propagation to last layer to before last layer.TODO
         input2activation_func = np.einsum('ij,jik->kj', outputs[:,:-2], self.connections) #node * layer
