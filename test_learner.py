@@ -6,17 +6,12 @@ class TestSigmoidNetwork(unittest.TestCase):
     def setUp(self):
         self.net = SigmoidNetwork(5, 4, 3, 43)
         self.input = np.array([x for x in range(5)])
-        self.outputs = self.net.forward_propagate(self.input)
-        self.classify_probs = \
-            self.net.classify(self.outputs[:, self.net.properties['layers_num'] - 1])
         
 class PrintProperty(TestSigmoidNetwork):
     def test_print_property(self):
         print('Network property is ')
         self.print_property()
         print('\nInput array is ', self.input)
-        print('\nOutputs of all layer is \n', self.outputs)
-        print('\nClassified_array is \n', self.classify_probs)
 
     def print_property(self):
         print('nodes num   = ', self.net.properties['nodes_num'])
@@ -24,32 +19,63 @@ class PrintProperty(TestSigmoidNetwork):
         print('classes num = ', self.net.properties['classes_num'])
         print('random seed = ', self.net.properties['random_seed'])
 
+class TestForwardPropagete(TestSigmoidNetwork):
+    def test_dimension_of_outputs(self):
+        outputs = self.net.forward_propagate(self.input)
+
+        print('\nOutputs of all layer is \n', outputs)        
+
+        self.assertEqual(outputs.shape, \
+                         (self.net.properties['nodes_num'], \
+                          self.net.properties['layers_num'] + 1))
         
 class TestClassifiedArray(TestSigmoidNetwork):        
     def test_classified_array_sum(self):
-        self.assertAlmostEqual(np.sum(self.classify_probs), 1.0, 7)
+        outputs = self.net.forward_propagate(self.input)
+        classify_probs = \
+            self.net.classify(outputs[:, self.net.properties['layers_num'] - 1])        
 
-class TestForwardPropagete(TestSigmoidNetwork):
-    def test_dimension_of_outputs(self):
-        self.assertEqual(self.outputs.shape, \
-                         (self.net.properties['nodes_num'], \
-                          self.net.properties['layers_num'] + 1))
-        print('\nOutputs probs of forward propagate is \n', self.outputs)
-        
+        print('\nClassified_array is \n', classify_probs)        
+
+        self.assertAlmostEqual(np.sum(classify_probs), 1.0, 7)        
+
 class TestDifferentialInOutput(TestSigmoidNetwork):
     def test_differential_in_output(self):
         answer_node = 2
+        outputs = self.net.forward_propagate(self.input)
+        classify_probs = \
+            self.net.classify(outputs[:, self.net.properties['layers_num'] - 1])
         differential, differential_by_weighted_sum = self.net.differential_in_output( \
-            self.outputs[:, self.net.properties['layers_num'] - 1], \
-            self.classify_probs, answer_node)
-        self.assertEqual(differential.shape, \
-            (self.net.properties['nodes_num'], self.net.properties['classes_num']))
-        self.assertEqual(differential_by_weighted_sum.shape, \
-            (self.net.properties['classes_num'],))
+            outputs[:, self.net.properties['layers_num'] - 1], classify_probs, answer_node)
+
         print('\n answer node is ', answer_node)
         print('Differential of output layer is \n', differential)
         print('\nDifferential of output layer by weited sum is \n', \
             differential_by_weighted_sum)
+
+        self.assertEqual(differential.shape, \
+            (self.net.properties['nodes_num'], self.net.properties['classes_num']))
+        self.assertEqual(differential_by_weighted_sum.shape, \
+            (self.net.properties['classes_num'],))
+
+class TestBackPropagation(TestSigmoidNetwork):
+    def test_deriv_err_by_connections_dimension(self):
+        answer_node = 2
+        outputs = self.net.forward_propagate(self.input)
+        classify_probs = \
+            self.net.classify(outputs[:, self.net.properties['layers_num'] - 1])
+        differential, differential_by_weighted_sum = self.net.differential_in_output( \
+            outputs[:, self.net.properties['layers_num'] - 1], classify_probs, answer_node)
+        deriv_err_by_connections = \
+            self.net.back_propagation(differential_by_weighted_sum, outputs)
+
+        print('\n answer node is ', answer_node)
+        print('\n Differential of error by connectin is \n', deriv_err_by_connections)
+        
+        self.assertEqual(deriv_err_by_connections.shape, \
+                         (self.net.properties['layers_num'], \
+                          self.net.properties['nodes_num'], \
+                          self.net.properties['nodes_num']))
         
 if __name__ == '__main__':
 
