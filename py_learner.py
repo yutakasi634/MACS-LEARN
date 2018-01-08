@@ -51,8 +51,8 @@ class SigmoidNetwork:
         assert input.shape == (nodes_num,), 'Invalid dimension input!!'
         outputs = np.array([input]).astype('float32')
         propagated_state = input
-        for layer in range(self.properties['layers_num']):
-            output = np.dot(propagated_state, self.connections[layer])
+        for connect in self.connections:
+            output = np.dot(propagated_state, connect)
             output = self.sigmoid(output)
             rand_array = self.random_generator.rand(nodes_num)
             propagated_state = np.less(rand_array, output).astype(int)
@@ -70,7 +70,7 @@ class SigmoidNetwork:
         return 1 / (1 + np.exp(-x))
     
     def deriv_sigmoid(self, x):
-        return sigmoid(x) * (1 - sigmoid(x))    
+        return self.sigmoid(x) * (1 - self.sigmoid(x))    
 
     def softmax_func(self, connections, input_array):
         #connections is wMK = {w1K, w2K, ......, wmK} m is cluster num, 2 dim, line vector
@@ -86,35 +86,41 @@ class SigmoidNetwork:
         #return is {sum(exp(x1)), sum(exp(x2)), ...... ,sum(exp(xn))}, scholar
         return np.sum(np.exp(input_array), axis=0)
 
-    def differential_in_output(self, inp, classify_probs, answer_node):
+    def differential_in_output(self, inp2classify_layer, classify_probs, answer_node):
         # both inp and classify_probs are numpy array. 1 dim
         # answer_node is scholar
         # differential is 2d matrix, node_num * class_num
         # differential_by_weited_sum is numpy array, class_num elements
         differential_by_weighted_sum = classify_probs
         differential_by_weighted_sum[answer_node] -=  1
-        differential = np.dot(np.matrix(inp).T, np.matrix(differential_by_weighted_sum))
+        differential = np.dot(np.matrix(inp2classify_layer).T, \
+                              np.matrix(differential_by_weighted_sum))
         return differential, differential_by_weighted_sum
 
     def back_propagation(self, output_diff_by_wighted_sum, outputs):
         inp2layer = \
-            np.einsum('ij,jik->kj', outputs, self.connections)
+            np.einsum('ij,jik->kj', outputs[:,:-1], self.connections)
         deriv_act_by_inp = self.deriv_sigmoid(inp2layer)
 
-        # back propagation from output layer to last layer.
+        # back propagation to last layer to before last layer.
         deriv_inp2output_by_inp2last = \
-            np.einsum('ij,i->ij',self.classification_connection ,deriv_act_by_inp[:, -1])
+            np.einsum('ij,i->ij', self.classification_connection ,deriv_act_by_inp[:, -1])
         deriv_err_by_weighted_sum = \
-            np.einsum('ij,j->i)', deriv_inp2output_by_inp2last, output_diff_by_wighted_sum)
-        deriv_by_connection  = np.einsum('i,j->ij', outputs[:, -2], \
+            np.dot(output_diff_by_wighted_sum, deriv_inp2output_by_inp2last.T)
+        deriv_err_by_connection  = np.einsum('i,j->ij', outputs[:, -2], \
                                          deriv_err_by_weighted_sum)
-        
-        # back propagation to last layer to before last layer.TODO
-        input2activation_func = np.einsum('ij,jik->kj', outputs[:,:-2], self.connections) #node * layer
-        deriv_activation_func = self.deriv_sigmoid(input2activation_func)
-        # del u_k^{l+1}x / del u_j^{l}
-        deriv_inp2act_by_inp2act = \
-            np.einsum('ijk,ji->ijk', self.connections, deriv_activation_func)
-        # i: layer, j: 
-        #TODO multiply upper layer's deriv of error and sum
-        
+        derivs_err_by_connections = np.array([deriv_err_by_connection]).astype('float32')
+        # back propagation to last layer to first layer.
+        deriv_inps_by_inpses = \
+            np.einsum('ijk,ji->ijk', self.connections, deriv_act_by_inp)
+
+        for (der_inps_inps, output) in zip(reversed(deriv_inps_by_inpses[:-1]), \
+                                           reversed(outputs[:-2])):
+            deriv_err_by_weighted_sum = \
+                np.dot(der_inps_inps, deriv_err_by_weighted_sum.T)
+            deriv_err_by_connection = \
+                np.einsum('i,j->ij', output, deriv_err_by_weighted_sum)
+            derivs_err_by_connections = \
+                np.append(derivs_err_by_connections, [deriv_err_by_connection], axis=0)
+
+        return derivs_err_by_connections
