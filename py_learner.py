@@ -114,7 +114,7 @@ class SigmoidNetwork:
             np.einsum('ijk,ji->ijk', self.connections, deriv_act_by_inp)
 
         for (der_inps_inps, output) in zip(reversed(deriv_inps_by_inpses[:-1]), \
-                                           reversed(outputs[:-2])):
+                                           reversed(outputs[:, :-2].T)):
             deriv_err_by_weighted_sum = \
                 np.dot(der_inps_inps, deriv_err_by_weighted_sum.T)
             deriv_err_by_connection = \
