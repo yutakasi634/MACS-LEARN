@@ -48,18 +48,21 @@ class TestClassifiedArray(TestSigmoidNetwork):
         classify_probs = \
             self.net.classify(outputs[:, self.net.layers_num - 1])        
 
-        print('\nClassified_array is \n', classify_probs)        
+        print('\nClassified_array is \n', classify_probs)   
 
-        self.assertAlmostEqual(np.sum(classify_probs), 1.0, 7)        
-
+        self.assertAlmostEqual(np.sum(classify_probs), 1.0, 7)
+        for prob in classify_probs:
+            self.assertGreaterEqual(prob, 0)
+        
 class TestDifferentialInOutput(TestSigmoidNetwork):
     def test_differential_in_output(self):
         answer_node = 2
         outputs = self.net.forward_propagate(self.input)
         classify_probs = \
             self.net.classify(outputs[:, self.net.layers_num - 1])
-        differential, differential_by_weighted_sum = self.net.differential_in_output( \
-            outputs[:, self.net.layers_num - 1], classify_probs, answer_node)
+        differential, differential_by_weighted_sum = \
+            self.net.differential_in_output( \
+                outputs[:, self.net.layers_num - 1], classify_probs, answer_node)
 
         print('\n answer node is ', answer_node)
         print('Differential of output layer is \n', differential)

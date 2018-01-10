@@ -6,6 +6,7 @@
 #
 
 import numpy as np
+import math
 
 class SigmoidNetwork:
     '''Neural network which have Sigmoid function as activation function.'''
@@ -46,14 +47,15 @@ class SigmoidNetwork:
     def learning_step(self, input, answer_node):
         epsilon = self.epsilon
         outputs = self.forward_propagate(input)
-        classify_probs = self.classify(outputs[:,-1])
-        deriv_by_classification_connection, output_deriv_by_weighted_sum = \
-            self.differential_in_output(outputs[:,-1], classify_probs, answer_node)
-        derivs_err_by_connections = \
-            self.back_propagation(output_deriv_by_weighted_sum, outputs)
+        classify_probs = self.classify(outputs[:, -1])
+        print('classify_probs ', classify_probs)
+        derivs_err_by_connections, deriv_by_classification_connection = \
+            self.derivs_err_by_connections(outputs, classify_probs, answer_node)
         self.connections -= self.epsilon * derivs_err_by_connections
         self.classification_connection -= \
             self.epsilon * deriv_by_classification_connection
+        exp_error = math.log(classify_probs[answer_node])
+        return exp_error
 
     def answer(self, input):
         classify_probs = self.answer_probs(input)
@@ -103,8 +105,11 @@ class SigmoidNetwork:
         # answer_node is scholar
         # differential is 2d matrix, node_num * class_num
         # differential_by_weited_sum is numpy array, class_num elements
-        differential_by_weighted_sum = classify_probs
-        differential_by_weighted_sum[answer_node] -=  1
+        print('classify_probs ', classify_probs)
+        differential_by_weighted_sum = classify_probs[:]
+        print('classify_probs ', classify_probs)
+        differential_by_weighted_sum[answer_node] = \
+            differential_by_weighted_sum[answer_node] - 1
         differential = np.dot(np.matrix(inp2classify_layer).T, \
                               np.matrix(differential_by_weighted_sum))
         return differential, differential_by_weighted_sum
@@ -136,8 +141,15 @@ class SigmoidNetwork:
                 np.append([deriv_err_by_connection], derivs_err_by_connections, axis=0)
 
         return derivs_err_by_connections
-    
-    
+
+    def derivs_err_by_connections(self, outputs, classify_probs, answer_node):
+        deriv_by_classification_connection, output_deriv_by_weighted_sum = \
+            self.differential_in_output(outputs[:,-1], classify_probs, answer_node)
+        print('classify_probs ', classify_probs)
+        derivs_err_by_connections = \
+            self.back_propagation(output_deriv_by_weighted_sum, outputs)
+        return derivs_err_by_connections, deriv_by_classification_connection
+        
     def sigmoid(self, x):
         return 1 / (1 + np.exp(-x))
     
