@@ -13,7 +13,10 @@ layer_num = 3
 classes_num = 10
 random_seed = 42
 epsilon = 0.1
-total_learning_step = 10000
+total_learning_step = 100
+total_test_step = 100
+output_file_name = 'output.dat'
+
 
 def random_plot(datas, xnum, ynum):
     data_num = datas.shape[0]
