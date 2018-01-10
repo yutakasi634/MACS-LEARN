@@ -1,4 +1,5 @@
-import random
+import numpy as np
+import random, sys, os
 
 from sklearn.utils import shuffle
 from sklearn.model_selection import train_test_split
@@ -6,6 +7,10 @@ from sklearn.datasets import fetch_mldata
 import matplotlib.pyplot as plt
 
 import py_learner
+
+args = sys.argv
+
+session_name = args[1]
 
 color_states = 255.0
 figure_size = (28, 28)
