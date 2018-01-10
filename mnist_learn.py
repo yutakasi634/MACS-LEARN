@@ -9,14 +9,16 @@ import py_learner
 
 color_states = 255.0
 figure_size = (28, 28)
-layer_num = 3
+layer_num = 2
 classes_num = 10
 random_seed = 42
 epsilon = 0.1
+
 total_learning_step = 100
 total_test_step = 100
-output_file_name = 'output.dat'
 
+output_file_name = 'output.dat'
+error_file_name = 'error.dat'
 
 def random_plot(datas, xnum, ynum):
     data_num = datas.shape[0]
@@ -45,11 +47,12 @@ if __name__ == '__main__':
     training_data_num = train_data.shape[0]
     test_data_num = test_data.shape[0]
 
-    outputfile = open(output_file_name, 'w')
+    logfile = open(log_file_name, 'w')
+    errorfile = open(error_file_name, 'w')
     
-    print('Training data num is ', training_data_num, file=outputfile)
-    print('Training figure size is ', figure_size, file=outputfile)
-    print('Total learning step is ', total_learning_step, file=outputfile)
+    print('Training data num is ', training_data_num, file=logfile)
+    print('Training figure size is ', figure_size, file=logfile)
+    print('Total learning step is ', total_learning_step, file=logfile)
     print('Learning start ...')
     
     network = py_learner.SigmoidNetwork(figure_size[0] * figure_size[1], \
@@ -57,7 +60,8 @@ if __name__ == '__main__':
                                         epsilon)
     for step in range(total_learning_step):
         data_index = random.randint(0, training_data_num - 1)
-        network.learning_step(train_data[data_index], int(train_ans[data_index]))
+        error = network.learning_step(train_data[data_index], int(train_ans[data_index]))
+        print(error, file=errorfile)
         if step % 100 == 0:
             print('Learning step is ', step)
             
@@ -67,7 +71,10 @@ if __name__ == '__main__':
         if ans == int(answer):
             correct_count += 1
     correct_prob = correct_count / test_data.shape[0]
-    print('Correct probability is ', correct_prob, file=outputfile)
-    print('Learned network weight is \n', network.connections, file=outputfile)
+    print('Correct probability is ', correct_prob, file=logfile)
+    print('Learned network weight is \n', network.connections, file=logfile)
     print('Learned classification network weight is \n', \
-          network.classification_connection, file=outputfile)
+          network.classification_connection, file=logfile)
+
+    logfile.close()
+    errorfile.close()
