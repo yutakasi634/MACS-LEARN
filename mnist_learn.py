@@ -22,8 +22,7 @@ epsilon = 0.1
 total_learning_step = 100
 total_test_step = 100
 
-output_file_name = 'output.dat'
-error_file_name = 'error.dat'
+output_dir_name = 'output'
 
 def random_plot(datas, xnum, ynum):
     data_num = datas.shape[0]
@@ -39,6 +38,13 @@ def random_plot(datas, xnum, ynum):
     plt.show()
 
 if __name__ == '__main__':
+
+    if not os.path.exists(output_dir_name):
+        os.mkdir(output_dir_name)
+    log_file_name = output_dir_name + '/' + session_name + '_log.dat'
+    error_file_name = output_dir_name + '/' + session_name + '_error.dat'
+    connections_file_name = output_dir_name + '/' + session_name + '_connections.toml'
+        
     mnist = fetch_mldata('MNIST original')
     mnist_data, mnist_ans = shuffle(mnist.data, mnist.target, random_state=42)
     mnist_data = mnist_data / color_states
