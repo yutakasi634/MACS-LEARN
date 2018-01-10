@@ -40,10 +40,13 @@ if __name__ == '__main__':
     #random_plot(train_data, 4, 4)
 
     training_data_num = train_data.shape[0]
-   
-    print('Training data num is ', training_data_num)
-    print('Training figure size is ', figure_size)
-    print('Total learning step is ', total_learning_step)
+    test_data_num = test_data.shape[0]
+
+    outputfile = open(output_file_name, 'w')
+    
+    print('Training data num is ', training_data_num, file=outputfile)
+    print('Training figure size is ', figure_size, file=outputfile)
+    print('Total learning step is ', total_learning_step, file=outputfile)
     print('Learning start ...')
     
     network = py_learner.SigmoidNetwork(figure_size[0] * figure_size[1], \
@@ -51,9 +54,17 @@ if __name__ == '__main__':
                                         epsilon)
     for step in range(total_learning_step):
         data_index = random.randint(0, training_data_num - 1)
-        # print(train_data[data_index])
-        # print(train_ans[data_index])
-        # print(train_data[data_index].shape)
         network.learning_step(train_data[data_index], int(train_ans[data_index]))
         if step % 100 == 0:
             print('Learning step is ', step)
+            
+    correct_count = 0
+    for (test_inp, answer) in zip(test_data[0:total_test_step], test_ans[0:total_test_step]):
+        ans = network.answer(test_inp)
+        if ans == int(answer):
+            correct_count += 1
+    correct_prob = correct_count / test_data.shape[0]
+    print('Correct probability is ', correct_prob, file=outputfile)
+    print('Learned network weight is \n', network.connections, file=outputfile)
+    print('Learned classification network weight is \n', \
+          network.classification_connection, file=outputfile)

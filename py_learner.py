@@ -56,6 +56,19 @@ class SigmoidNetwork:
             self.epsilon * deriv_by_classification_connection
 
     def answer(self, input):
+        classify_probs = self.answer_probs(input)
+        random_num = self.random_generator.rand()
+        total_prob = 0.
+        answer = -1
+        for index, prob in enumerate(classify_probs):
+            total_prob += prob
+            if random_num <= total_prob:
+                answer = index
+                break
+        return answer
+        
+        
+    def answer_probs(self, input):
         input2classify_layer = self.forward_propagate(input)[:,-1]
         classify_probs = self.classify(input2classify_layer)
         return classify_probs

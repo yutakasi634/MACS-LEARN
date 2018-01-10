@@ -93,20 +93,28 @@ class TestBackPropagation(TestSigmoidNetwork):
 class TestLearningStep(TestSigmoidNetwork):
     def test_learning_step(self):
         answer_node = 2
-        total_learning_step = 10000
-        total_answer_step = 1000
+        total_learning_step = 1000
+        total_answer_step = 10
         for step in range(total_learning_step):
             self.net.learning_step(self.input, answer_node)
+        print('\nTotal learning step is ', total_learning_step)
         print('\nLearned network weight is \n', self.net.connections)
         print('\nLearned classification network weight is \n', \
               self.net.classification_connection)
 
         prob_mean = np.zeros((self.net.classes_num))
+        answer_mean = 0
         for step in range(total_answer_step):
-            prob_mean += self.net.answer(self.input)
+            prob_mean += self.net.answer_probs(self.input)
+            answer_mean += self.net.answer(self.input)
         prob_mean /= total_answer_step
-        print('\nMean answer is ', prob_mean)
-            
+        answer_mean /= total_answer_step
+        print('\nTotal answer step is ', total_answer_step)
+        print('\nMean answer prob is ', prob_mean)
+        print('\nMean answer is ', answer_mean)
+
+
+        
 if __name__ == '__main__':
 
     unittest.main()
