@@ -47,7 +47,6 @@ class SigmoidNetwork:
     def learning_step(self, input, answer_node):
         outputs = self.forward_propagate(input)
         classify_probs = self.classify(outputs[:, -1])
-        print('classify_probs ', classify_probs)
         derivs_err_by_connections, deriv_by_classification_connection = \
             self.derivs_err_by_connections(outputs, classify_probs, answer_node)
         self.connections -= self.epsilon * derivs_err_by_connections
@@ -104,9 +103,7 @@ class SigmoidNetwork:
         # answer_node is scholar
         # differential is 2d matrix, node_num * class_num
         # differential_by_weited_sum is numpy array, class_num elements
-        print('classify_probs ', classify_probs)
-        differential_by_weighted_sum = classify_probs[:]
-        print('classify_probs ', classify_probs)
+        differential_by_weighted_sum = classify_probs.copy()
         differential_by_weighted_sum[answer_node] = \
             differential_by_weighted_sum[answer_node] - 1
         differential = np.dot(np.matrix(inp2classify_layer).T, \
@@ -144,7 +141,6 @@ class SigmoidNetwork:
     def derivs_err_by_connections(self, outputs, classify_probs, answer_node):
         deriv_by_classification_connection, output_deriv_by_weighted_sum = \
             self.differential_in_output(outputs[:,-1], classify_probs, answer_node)
-        print('classify_probs ', classify_probs)
         derivs_err_by_connections = \
             self.back_propagation(output_deriv_by_weighted_sum, outputs)
         return derivs_err_by_connections, deriv_by_classification_connection
