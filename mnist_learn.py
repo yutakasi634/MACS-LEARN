@@ -14,7 +14,7 @@ classes_num = 10
 random_seed = 42
 epsilon = 0.1
 
-total_learning_step = 1000
+total_learning_step = 10000
 total_test_step = 1000
 
 log_file_name = 'output.dat'

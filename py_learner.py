@@ -45,7 +45,6 @@ class SigmoidNetwork:
                                 self.layers_num)).astype('float32')
 
     def learning_step(self, input, answer_node):
-        epsilon = self.epsilon
         outputs = self.forward_propagate(input)
         classify_probs = self.classify(outputs[:, -1])
         print('classify_probs ', classify_probs)
