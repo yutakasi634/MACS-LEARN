@@ -73,7 +73,7 @@ if __name__ == '__main__':
     with open(error_file_name, 'w') as errfile:
         for step in range(total_learning_step):
             data_index = random.randint(0, training_data_num - 1)
-            error = network.learning_step(train_data[data_index], int(train_ans[data_index]))
+            error = network.momentum_learning_step(train_data[data_index], int(train_ans[data_index]))
             errfile.write(str(error) + '\n')
             if step % 100 == 0:
                 print('Learning step is ', step)

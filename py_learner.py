@@ -24,12 +24,14 @@ class SigmoidNetwork:
     # |  |   |   |   |
     # |  (   layers  )
     # input
-    def __init__(self, nodes_num, layers_num, classes_num, random_seed, epsilon):
+    def __init__(self, nodes_num, layers_num, classes_num, random_seed,\
+                 epsilon, momentum = 0):
         self.nodes_num = nodes_num
         self.layers_num = layers_num
         self.classes_num = classes_num
         self.random_seed = random_seed
         self.epsilon = epsilon
+        self.momentum = momentum
         self.random_generator = np.random.RandomState(self.random_seed)
         self.connections = \
             self.random_generator.uniform( \
@@ -41,6 +43,11 @@ class SigmoidNetwork:
             self.random_generator.uniform( \
                 low=-0.1, high=0.1, size=(self.nodes_num, \
                                           self.classes_num)).astype('float32')
+        self.momentum_connections_updated = \
+            np.zeros((self.layers_num, self.nodes_num, self.nodes_num))\
+              .astype('float32')
+        self.momentum_classif_connection_updated = \
+            np.zeros((self.nodes_num, self.classes_num))
         self.biases = np.zeros((self.nodes_num, \
                                 self.layers_num)).astype('float32')
 
@@ -52,9 +59,28 @@ class SigmoidNetwork:
         self.connections -= self.epsilon * derivs_err_by_connections
         self.classification_connection -= \
             self.epsilon * deriv_by_classification_connection
-        exp_error = math.log(classify_probs[answer_node])
-        return exp_error
+        error = math.log(classify_probs[answer_node])
+        return error
 
+    def momentum_learning_step(self, input, answer_node):
+        outputs = self.forward_propagate(input)
+        classify_probs = self.classify(outputs[:, -1])
+        derivs_err_by_connections, deriv_by_classification_connection = \
+            self.derivs_err_by_connections(outputs, classify_probs, answer_node)
+
+        self.momentum_connections_updated = \
+            self.momentum * self.momentum_connections_updated + \
+            self.epsilon * derivs_err_by_connections
+        self.connections -= self.momentum_connections_updated
+
+        self.momentum_classif_connection_updated = \
+            self.momentum * self.momentum_classif_connection_updated + \
+            self.epsilon * deriv_by_classification_connection
+        self.classification_connection -= self.momentum_classif_connection_updated
+
+        error = math.log(classify_probs[answer_node])
+        return error
+        
     def answer(self, input):
         classify_probs = self.answer_probs(input)
         random_num = self.random_generator.rand()

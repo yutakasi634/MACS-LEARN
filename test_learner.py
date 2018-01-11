@@ -12,7 +12,7 @@ from py_learner import *
 class TestSigmoidNetwork(unittest.TestCase):
 
     def setUp(self):
-        self.net = SigmoidNetwork(5, 4, 3, 43, 0.1)
+        self.net = SigmoidNetwork(5, 4, 3, 43, 0.1, momentum=0.9)
         self.input = np.array([x for x in range(5)])
         
 class PrintProperty(TestSigmoidNetwork):
@@ -116,8 +116,21 @@ class TestLearningStep(TestSigmoidNetwork):
         print('\nMean answer prob is ', prob_mean)
         print('\nMean answer is ', answer_mean)
 
+class TestMomentumLearningStep(TestSigmoidNetwork):
+    def test_momentum_learning_step(self):
+        answer_node = 2
+        total_learning_step = 1000
+        total_answer_step = 10
+        for step in range(total_learning_step):
+            self.net.momentum_learning_step(self.input, answer_node)        
 
-        
+        prob_mean = np.zeros((self.net.classes_num))
+        for step in range(total_answer_step):
+            prob_mean += self.net.answer_probs(self.input)
+        prob_mean /= total_answer_step
+
+        self.assertGreater(prob_mean[answer_node], 0.8)
+            
 if __name__ == '__main__':
 
     unittest.main()
