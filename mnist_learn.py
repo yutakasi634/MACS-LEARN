@@ -44,7 +44,7 @@ if __name__ == '__main__':
     log_file_name = output_dir_name + '/' + session_name + '_log.dat'
     error_file_name = output_dir_name + '/' + session_name + '_error.dat'
     connections_file_name = output_dir_name + '/' + session_name + '_connections.toml'
-        
+
     mnist = fetch_mldata('MNIST original')
     mnist_data, mnist_ans = shuffle(mnist.data, mnist.target, random_state=42)
     mnist_data = mnist_data / color_states
@@ -61,15 +61,22 @@ if __name__ == '__main__':
     errorfile = open(error_file_name, 'w')
     connectionfile = open(connections_file_name, 'w')
 
+    network = py_learner.SigmoidNetwork(figure_size[0] * figure_size[1], \
+                                        layer_num, classes_num, random_seed, \
+                                        epsilon)
+    net_properties = network.properties()
+
     with open(log_file_name, 'w') as logfile:
         logfile.write('Training data num is ' + str(training_data_num))
         logfile.write('\nTraining figure size is ' + str(figure_size))
         logfile.write('\nTotal learning step is ' + str(total_learning_step))
+        logfile.write('\nNetwork middle layer num is ' + str(net_properties['layers_num']))
+        logfile.write('\nNetwork nodes num is ' + str(net_properties['nodes_num']))
+        logfile.write('\nNetwork classes num is ' + str(net_properties['classes_num']))
+        logfile.write('\nNetwork random seed is ' + str(net_properties['random_seed']))
+        logfile.write('\nNetwork learning epsilon is ' + str(net_properties['epsilon']))
     print('Learning start ...')
-    
-    network = py_learner.SigmoidNetwork(figure_size[0] * figure_size[1], \
-                                        layer_num, classes_num, random_seed, \
-                                        epsilon)
+
     with open(error_file_name, 'w') as errfile:
         for step in range(total_learning_step):
             data_index = random.randint(0, training_data_num - 1)
@@ -77,7 +84,7 @@ if __name__ == '__main__':
             errfile.write(str(error) + '\n')
             if step % 100 == 0:
                 print('Learning step is ', step)
-            
+
     correct_count = 0
     for (test_inp, answer) in zip(test_data[0:total_test_step], test_ans[0:total_test_step]):
         ans = network.answer(test_inp)
@@ -88,7 +95,7 @@ if __name__ == '__main__':
     with open(log_file_name, 'a') as logfile:
         logfile.write('\nCorrect probability is ')
         logfile.write(str(correct_prob))
-    
+
     with open(connections_file_name, 'w') as confile:
         confile.write('[Connections]\n')
         confile.write('intra_connections = [\n')
