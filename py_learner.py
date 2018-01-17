@@ -43,8 +43,15 @@ class SigmoidNetwork:
             self.random_generator.uniform( \
                 low=-0.1, high=0.1, size=(self.nodes_num, \
                                           self.classes_num)).astype('float32')
+        self.biases = \
+            self.random_generator.uniform( \
+                low=-1.0, high=1.0, size=(self.nodes_num, self.layers_num)) \
+                                 .astype('float32')
         self.momentum_connections_updated = \
             np.zeros((self.layers_num, self.nodes_num, self.nodes_num))\
+              .astype('float32')
+        self.momentum_biases_updated = \
+            np.zeros((self.nodes_num, self.layers_num)) \
               .astype('float32')
         self.momentum_classif_connection_updated = \
             np.zeros((self.nodes_num, self.classes_num))
@@ -54,30 +61,26 @@ class SigmoidNetwork:
     def learning_step(self, input, answer_node):
         outputs = self.forward_propagate(input)
         classify_probs = self.classify(outputs[:, -1])
-        derivs_err_by_connections, deriv_by_classification_connection = \
+        derivs_err_by_connections, derivs_err_by_biases, deriv_by_classification_connection = \
             self.derivs_err_by_connections(outputs, classify_probs, answer_node)
-        self.connections -= self.epsilon * derivs_err_by_connections
-        self.classification_connection -= \
-            self.epsilon * deriv_by_classification_connection
+        connections_update, biases_update, classif_con_update = \
+            self.calc_update(derivs_err_by_connections, derivs_err_by_biases, \
+                             deriv_by_classification_connection)
+        self.update_weight(connections_update, biases_update, classif_con_update)
         error = math.log(classify_probs[answer_node])
         return error
 
     def momentum_learning_step(self, input, answer_node):
         outputs = self.forward_propagate(input)
         classify_probs = self.classify(outputs[:, -1])
-        derivs_err_by_connections, deriv_by_classification_connection = \
+        derivs_err_by_connections, derivs_err_by_biases, deriv_by_classification_connection = \
             self.derivs_err_by_connections(outputs, classify_probs, answer_node)
-
-        self.momentum_connections_updated = \
-            self.momentum * self.momentum_connections_updated + \
-            self.epsilon * derivs_err_by_connections
-        self.connections -= self.momentum_connections_updated
-
-        self.momentum_classif_connection_updated = \
-            self.momentum * self.momentum_classif_connection_updated + \
-            self.epsilon * deriv_by_classification_connection
-        self.classification_connection -= self.momentum_classif_connection_updated
-
+        connections_update, biases_update, classif_con_update = \
+            self.calc_momentum_update(derivs_err_by_connections, \
+                                      derivs_err_by_biases,\
+                                      deriv_by_classification_connection)
+        self.update_weight(connections_update, \
+                           biases_update, classif_con_update)
         error = math.log(classify_probs[answer_node])
         return error
         
@@ -104,8 +107,8 @@ class SigmoidNetwork:
         assert input.shape == (self.nodes_num,), 'Invalid dimension input!!'
         outputs = np.array([input]).astype('float32')
         propagated_state = input
-        for connect in self.connections:
-            output = np.dot(propagated_state, connect)
+        for index, connect in enumerate(self.connections):
+            output = np.dot(propagated_state, connect) + self.biases[:, index]
             output = self.sigmoid(output)
             rand_array = self.random_generator.rand(self.nodes_num)
             propagated_state = np.less(rand_array, output).astype(int)
@@ -146,10 +149,11 @@ class SigmoidNetwork:
             np.einsum('ij,i->ij', self.classification_connection ,deriv_act_by_inp[:, -1])
         deriv_err_by_weighted_sum = \
             np.dot(output_diff_by_wighted_sum, deriv_inp2output_by_inp2last.T)
+        derivs_err_by_biases = np.array([deriv_err_by_weighted_sum]).astype('float32')
         deriv_err_by_connection  = np.einsum('i,j->ij', outputs[:, -2], \
                                          deriv_err_by_weighted_sum)
         derivs_err_by_connections = np.array([deriv_err_by_connection]).astype('float32')
-        # back propagation to last layer to first layer.
+        # back propagation to before last layer to first layer.
         deriv_inps_by_inpses = \
             np.einsum('ijk,ji->ijk', self.connections, deriv_act_by_inp)
 
@@ -159,17 +163,46 @@ class SigmoidNetwork:
                 np.dot(der_inps_inps, deriv_err_by_weighted_sum.T)
             deriv_err_by_connection = \
                 np.einsum('i,j->ij', output, deriv_err_by_weighted_sum)
+            derivs_err_by_biases = \
+                np.append([deriv_err_by_weighted_sum], derivs_err_by_biases, axis=0)
             derivs_err_by_connections = \
                 np.append([deriv_err_by_connection], derivs_err_by_connections, axis=0)
 
-        return derivs_err_by_connections
+        return derivs_err_by_connections, derivs_err_by_biases.T
 
     def derivs_err_by_connections(self, outputs, classify_probs, answer_node):
         deriv_by_classification_connection, output_deriv_by_weighted_sum = \
             self.differential_in_output(outputs[:,-1], classify_probs, answer_node)
-        derivs_err_by_connections = \
+        derivs_err_by_connections, derivs_err_by_biases = \
             self.back_propagation(output_deriv_by_weighted_sum, outputs)
-        return derivs_err_by_connections, deriv_by_classification_connection
+        return derivs_err_by_connections, derivs_err_by_biases, deriv_by_classification_connection
+
+    def update_weight(self, connection_update, biases_update, classif_con_update):
+        self.connections -= connection_update
+        self.biases -= biases_update
+        self.classification_connection -= classif_con_update
+
+    def calc_update(self, deriv_by_connections, deriv_by_biases, \
+                    deriv_by_classification_connection):
+        return self.epsilon * deriv_by_connections, \
+            self.epsilon * deriv_by_biases, \
+            self.epsilon * deriv_by_classification_connection
+
+    def calc_momentum_update(self, derivs_by_connections, derivs_by_biases, \
+                             derivs_by_classification_connection):
+        self.momentum_connections_updated = \
+            self.momentum * self.momentum_connections_updated + \
+            self.epsilon * derivs_by_connections
+
+        self.momentum_biases_updated = \
+            self.momentum * self.momentum_biases_updated + \
+            self.epsilon * derivs_by_biases
+        
+        self.momentum_classif_connection_updated = \
+            self.momentum * self.momentum_classif_connection_updated + \
+            self.epsilon * derivs_by_classification_connection
+        return self.momentum_connections_updated, self.momentum_biases_updated, \
+            self.momentum_classif_connection_updated
         
     def sigmoid(self, x):
         return 1 / (1 + np.exp(-x))
