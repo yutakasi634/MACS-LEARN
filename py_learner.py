@@ -24,35 +24,46 @@ class SigmoidNetwork:
     # |  |   |   |   |
     # |  (   layers  )
     # input
-    def __init__(self, nodes_num, layers_num, classes_num, random_seed,\
+    def __init__(self, nodes_nums, classes_num, random_seed,\
                  epsilon, momentum = 0):
-        self.nodes_num = nodes_num
-        self.layers_num = layers_num
+        # nodes_nums include input layer, middle layer (not classify layer).
+        self.nodes_nums = nodes_nums
+        self.layers_num = len(nodes_nums)
         self.classes_num = classes_num
         self.random_seed = random_seed
         self.epsilon = epsilon
         self.momentum = momentum
         self.random_generator = np.random.RandomState(self.random_seed)
-        self.connections = \
-            self.random_generator.uniform( \
-                low=-0.1, high=0.1, size=(self.layers_num, \
-                                          self.nodes_num, \
-                                          self.nodes_num)) \
-                                 .astype('float32')
+        self.connections = []
+        self.momentum_connections_updated = []
+        self.biases = []
+        self.momentum_biases_updated = []
+        for index in range(self.layers_num - 1):
+            self.connection.append(
+                self.random_generator \
+                .uniform(low=-0.1, high=0.1, \
+                         size=(self.nodes_nums[index], \
+                               self.nodes_nums[index + 1])) \
+                .astype('float32'))
+
+            self.momentum_connections_updated.append(
+                np.zeros((self.nodes_num[index], self.nodes_nums[index + 1])) \
+                .astype('float32'))
+
+            self.biases.append(
+                self.random_generator \
+                .uniform(low=-1.0, high=1,0, \
+                         size=(self.nodes_num[index])) \
+                astype('float32'))
+
+            self.momentum_biases_updated.append(
+                np.zeros((self.nodes_num[index])).astype('float32'))
+            
         self.classification_connection = \
             self.random_generator.uniform( \
-                low=-0.1, high=0.1, size=(self.nodes_num, \
+                low=-0.1, high=0.1, size=(self.nodes_nums[-1], \
                                           self.classes_num)).astype('float32')
-        self.biases = \
-            self.random_generator.uniform( \
-                low=-1.0, high=1.0, size=(self.nodes_num, self.layers_num)) \
-                                 .astype('float32')
-        self.momentum_connections_updated = \
-            np.zeros((self.layers_num, self.nodes_num, self.nodes_num))\
-              .astype('float32')
-        self.momentum_biases_updated = \
-            np.zeros((self.nodes_num, self.layers_num)) \
-              .astype('float32')
+
         self.momentum_classif_connection_updated = \
             np.zeros((self.nodes_num, self.classes_num))
         self.biases = np.zeros((self.nodes_num, \
@@ -104,26 +115,26 @@ class SigmoidNetwork:
         
     def forward_propagate(self, input):
         # input is numpy array, 1 dim
-        assert input.shape == (self.nodes_num,), 'Invalid dimension input!!'
-        outputs = np.array([input]).astype('float32')
+        assert input.shape[0] == self.nodes_nums[0], 'Invalid dimension input!!'
+        outputs = [np.array(input).astype(int)]
         propagated_state = input
         for index, connect in enumerate(self.connections):
             output = np.dot(propagated_state, connect) + self.biases[:, index]
             output = self.sigmoid(output)
-            rand_array = self.random_generator.rand(self.nodes_num)
+            rand_array = self.random_generator.rand(self.nodes_nums[index + 1])
             propagated_state = np.less(rand_array, output).astype(int)
-            outputs = np.append(outputs, [propagated_state], axis=0)
-        return outputs.T
+            outputs.append(propagated_state)
+        return outputs
 
     def classify(self, input):
         # input is numpy array
         # return is numpy array
-        assert input.shape[0] == self.nodes_num, 'Invalid dimension input!!'
+        assert input.shape[0] == self.nodes_nums[-1], 'Invalid dimension input!!'
         classify_probs = self.softmax_func(self.classification_connection, input)
         return classify_probs
 
     def properties(self):
-        return { 'nodes_num': self.nodes_num, 'layers_num': self.layers_num, \
+        return { 'nodes_nums': self.nodes_nums, 'layers_num': self.layers_num, \
                  'classes_num': self.classes_num, 'random_seed': self.random_seed, \
                  'epsilon': self.epsilon }
     
@@ -140,20 +151,26 @@ class SigmoidNetwork:
         return differential, differential_by_weighted_sum
     
     def back_propagation(self, output_diff_by_wighted_sum, outputs):
-        inp2layer = \
-            np.einsum('ij,jik->kj', outputs[:,:-1], self.connections)
-        deriv_act_by_inp = self.deriv_sigmoid(inp2layer)
+        inp2layers = \
+            map(lambda output, connection: np.dot(output, connection),
+                outputs[:-1], self.connections)
+        deriv_act_by_inps = map(lambda inp2layer: self.deriv_sigmoid(inp2layer),
+                               inp2layers)
 
         # back propagation to last layer to before last layer.
         deriv_inp2output_by_inp2last = \
-            np.einsum('ij,i->ij', self.classification_connection ,deriv_act_by_inp[:, -1])
+            np.einsum('ij,i->ij', self.classification_connection ,deriv_act_by_inps[-1])
         deriv_err_by_weighted_sum = \
             np.dot(output_diff_by_wighted_sum, deriv_inp2output_by_inp2last.T)
         derivs_err_by_biases = np.array([deriv_err_by_weighted_sum]).astype('float32')
         deriv_err_by_connection  = np.einsum('i,j->ij', outputs[:, -2], \
                                          deriv_err_by_weighted_sum)
-        derivs_err_by_connections = np.array([deriv_err_by_connection]).astype('float32')
+        derivs_err_by_connections = [np.array(deriv_err_by_connection).astype('float32')]
+
         # back propagation to before last layer to first layer.
+        deriv_inps_by_inpses = \
+            map(lambda connection, deriv_act_by_inp: einsum('ij,i-ij'), \
+                deriv_act_by_inps[:-1])
         deriv_inps_by_inpses = \
             np.einsum('ijk,ji->ijk', self.connections, deriv_act_by_inp)
 
