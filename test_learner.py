@@ -82,7 +82,7 @@ class TestBackPropagation(TestSigmoidNetwork):
             self.net.classify(outputs[:, self.net.layers_num - 1])
         differential, differential_by_weighted_sum = self.net.differential_in_output( \
             outputs[:, self.net.layers_num - 1], classify_probs, answer_node)
-        deriv_err_by_connections = \
+        deriv_err_by_connections, deriv_err_by_biases = \
             self.net.back_propagation(differential_by_weighted_sum, outputs)
 
         print('\n answer node is ', answer_node)
@@ -92,6 +92,9 @@ class TestBackPropagation(TestSigmoidNetwork):
                          (self.net.layers_num, \
                           self.net.nodes_num, \
                           self.net.nodes_num))
+
+        self.assertEqual(deriv_err_by_biases.shape, \
+                         (self.net.nodes_num, self.net.layers_num))
 
 class TestLearningStep(TestSigmoidNetwork):
     def test_learning_step(self):
